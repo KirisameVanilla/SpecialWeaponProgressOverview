@@ -1,0 +1,10 @@
+{
+  "Author": "KirisameVanilla",
+  "Name": "SpecialWeaponProgressOverview",
+  "Punchline": "一个用来检测和快速查询肝武进度的小工具。",
+  "Description": "一个用来检测和快速查询肝武进度的小工具。\n（如肝武放置在雇员身上则需要官库的Allagan Tools）",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "Bozja", "Weapon", "Eureka"
+  ]
+}
