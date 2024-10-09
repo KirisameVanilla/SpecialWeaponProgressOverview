@@ -120,11 +120,6 @@ public class InventoryWindow : Window, IDisposable
                 {
                     if (RetainerData.SelectMany(x => x.Value).Any(x => x.Key == ItemId))
                     {
-                        if (hqOnly)
-                        {
-                            return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemId == ItemId).Sum(x => x.HQQuantity);
-                        }
-
                         return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemId == ItemId).Sum(x => x.Quantity);
                     }
                 }
@@ -170,12 +165,6 @@ public class InventoryWindow : Window, IDisposable
                         }
                     }
                 }
-
-                if (hqOnly)
-                {
-                    return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemId == ItemId).Sum(x => x.HQQuantity);
-                }
-
                 return (int)RetainerData.SelectMany(x => x.Value).Where(x => x.Key == ItemId).Sum(x => x.Value.Quantity);
             }
             catch (Exception ex)
@@ -189,7 +178,7 @@ public class InventoryWindow : Window, IDisposable
 
     private unsafe int GetItemCountTotal(uint itemId)
     {
-        var countInRetainers = ATools?GetRetainerItemCount(itemId):0;
+        var countInRetainers = GetRetainerItemCount(itemId);
         var countInBag = InventoryManager.Instance()->GetInventoryItemCount(itemId);
         var countInSaddleBag = InventoryManager.Instance()->GetItemCountInContainer(itemId, InventoryType.SaddleBag1)
                                + InventoryManager.Instance()->GetItemCountInContainer(itemId, InventoryType.SaddleBag2);
@@ -392,6 +381,7 @@ public class InventoryWindow : Window, IDisposable
             return;
         }
         var playerJobId = localPlayer.ClassJob.Id;
+        ImGui.Text($"Is Allagan Tools available: {ATools}");
         ImGui.Combo("武器系列##选武器", ref selectedWeaponSeriesIndex, specialWeaponSeriesList, 6);
         if (selectedWeaponSeriesIndex != 0)
         {
