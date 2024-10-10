@@ -317,6 +317,15 @@ public class InventoryWindow : Window, IDisposable
         25, 27, 35,
     };
 
+    private static readonly Dictionary<uint, int> JobIndex = new()
+    {
+        { 19, 0 }, { 21, 2 }, { 32, 6 }, { 37, 15 },
+        { 24, 8 }, { 28, 11 }, { 33, 12 }, { 40, 17 },
+        { 20, 1 }, { 22, 3 }, { 34, 13 }, { 39, 18 }, { 30, 5 },
+        { 23, 4 }, { 31, 7 }, { 38, 16 },
+        { 25, 9 }, { 27, 10 }, { 35, 14 }
+    };
+
     private static readonly Dictionary<int, int> JobsOfSpecialWeapon = new()
     {
         {1,10},//古武
@@ -382,6 +391,11 @@ public class InventoryWindow : Window, IDisposable
         }
         var playerJobId = localPlayer.ClassJob.Id;
         ImGui.Text($"Is Allagan Tools available: {ATools}");
+        ImGui.Text($"点一下数字能获取对应武器名字（然后打开item search可以查预览）");
+        if(ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip("item search没开ipc也没开指令交互");
+        }
         ImGui.Combo("武器系列##选武器", ref selectedWeaponSeriesIndex, specialWeaponSeriesList, 6);
         if (selectedWeaponSeriesIndex != 0)
         {
@@ -389,31 +403,31 @@ public class InventoryWindow : Window, IDisposable
             {
                 case 1:
                     {
-                        GetZodiacWeaponData();
+                        GetProcessData(1, ZodiacWeaponId, ZodiacWeaponJobIdList, ref zodiacWeaponProcess);
                         DrawZodiac();
                         break;
                     }
                 case 2:
                     {
-                        GetAnimaWeaponData();
+                        GetProcessData(2, AnimaWeaponId, AnimaWeaponJobIdList, ref animaWeaponProcess);
                         DrawAnima();
                         break;
                     }
                 case 3:
                     {
-                        GetEurekaWeaponData();
+                        GetProcessData(3, EurekaWeaponId, EurekaWeaponJobIdList, ref eurekaWeaponProcess);
                         DrawEureka();
                         break;
                     }
                 case 4:
                     {
-                        GetBozjaWeaponData();
+                        GetProcessData(4, BozjaWeaponId, BozjaWeaponJobIdList, ref bozjaWeaponProcess);
                         DrawBozja();
                         break;
                     }
                 case 5:
                     {
-                        GetMandervillousWeaponData();
+                        GetProcessData(5, MandervillousWeaponId, MandervillousWeaponJobIdList, ref mandervillousWeaponProcess);
                         DrawMandervillous();
                         break;
                     }
@@ -429,76 +443,19 @@ public class InventoryWindow : Window, IDisposable
         }
     }
 
-    private void GetZodiacWeaponData()
+    private void GetProcessData(int weaponIndex, List<List<uint>> weaponIdList, List<uint> jobIdList, ref Dictionary<uint, List<int>> weaponProcess)
     {
-        for (var i = 0; i < JobsOfSpecialWeapon[1]; i++)//Job Index
+        for (var i = 0; i < JobsOfSpecialWeapon[weaponIndex]; i++)//Job Index
         {
-            for (var j = 0; j < ZodiacWeaponId.Count; j++)//阶段
+            for (var j = 0; j < weaponIdList.Count; j++)//阶段
             {
-                var curWeaponId = ZodiacWeaponId[j][i];
-                var curJobId = ZodiacWeaponJobIdList[i];
+                var curJobId = jobIdList[i];
+                var curWeaponId = weaponIdList[j][JobIndex[curJobId]];
                 var curWeaponCount = GetItemCountTotal(curWeaponId);
-                zodiacWeaponProcess[curJobId][j] = curWeaponCount;
+                weaponProcess[curJobId][j] = curWeaponCount;
             }
         }
     }
-
-    private void GetAnimaWeaponData()
-    {
-        for (var i = 0; i < JobsOfSpecialWeapon[2]; i++)//Job Index
-        {
-            for (var j = 0; j < AnimaWeaponId.Count; j++)//阶段
-            {
-                var curWeaponId = AnimaWeaponId[j][i];
-                var curJobId = AnimaWeaponJobIdList[i];
-                var curWeaponCount = GetItemCountTotal(curWeaponId);
-                animaWeaponProcess[curJobId][j] = curWeaponCount;
-            }
-        }
-    }
-
-    private void GetEurekaWeaponData()
-    {
-        for (var i = 0; i < JobsOfSpecialWeapon[3]; i++)//Job Index
-        {
-            for (var j = 0; j < EurekaWeaponId.Count; j++) //阶段
-            {
-                var curWeaponId = EurekaWeaponId[j][i];
-                var curJobId = EurekaWeaponJobIdList[i];
-                var curWeaponCount = GetItemCountTotal(curWeaponId);
-                eurekaWeaponProcess[curJobId][j] = curWeaponCount;
-            }
-        }
-    }
-
-    private void GetBozjaWeaponData()
-    {
-        for (var i = 0; i < JobsOfSpecialWeapon[4]; i++)//Job Index
-        {
-            for (var j = 0; j < BozjaWeaponId.Count; j++)//阶段
-            {
-                var curWeaponId = BozjaWeaponId[j][i];
-                var curJobId = BozjaWeaponJobIdList[i];
-                var curWeaponCount = GetItemCountTotal(curWeaponId);
-                bozjaWeaponProcess[curJobId][j] = curWeaponCount;
-            }
-        }
-    }
-
-    private void GetMandervillousWeaponData()
-    {
-        for (var i = 0; i < JobsOfSpecialWeapon[5]; i++)//Job Index
-        {
-            for (var j = 0; j < MandervillousWeaponId.Count; j++)//阶段
-            {
-                var curWeaponId = MandervillousWeaponId[j][i];
-                var curJobId = MandervillousWeaponJobIdList[i];
-                var curWeaponCount = GetItemCountTotal(curWeaponId);
-                mandervillousWeaponProcess[curJobId][j] = curWeaponCount;
-            }
-        }
-    }
-
 
     private string ComputeNeedsZodiac()
     {
@@ -685,6 +642,11 @@ public class InventoryWindow : Window, IDisposable
                 Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
                 ImGui.TextColored(color, $"{line[j]}");
+                if (ImGui.IsItemClicked())
+                {
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                }
             }
         }
         ImGui.EndTable();
@@ -723,6 +685,11 @@ public class InventoryWindow : Window, IDisposable
                 Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
                 ImGui.TextColored(color, $"{line[j]}");
+                if (ImGui.IsItemClicked())
+                {
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                }
             }
         }
         ImGui.EndTable();
@@ -740,7 +707,7 @@ public class InventoryWindow : Window, IDisposable
         ImGui.TableSetupColumn("改良型裁决", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("女王武器", ImGuiTableColumnFlags.None);
         ImGui.TableHeadersRow();
-        foreach (var jobId in AnimaWeaponJobIdList)
+        foreach (var jobId in BozjaWeaponJobIdList)
         {
             var line = bozjaWeaponProcess[jobId];
             ImGui.TableNextRow();
@@ -752,6 +719,11 @@ public class InventoryWindow : Window, IDisposable
                 Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
                 ImGui.TextColored(color, $"{line[j]}");
+                if (ImGui.IsItemClicked())
+                {
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                }
             }
         }
         ImGui.EndTable();
@@ -779,6 +751,11 @@ public class InventoryWindow : Window, IDisposable
                 Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
                 ImGui.TextColored(color, $"{line[j]}");
+                if (ImGui.IsItemClicked())
+                {
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                }
             }
         }
         ImGui.EndTable();
