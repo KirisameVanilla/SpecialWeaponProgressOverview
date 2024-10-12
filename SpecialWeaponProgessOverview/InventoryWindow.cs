@@ -687,8 +687,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, $"{line[j]}");
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
                 }
             }
         }
@@ -721,8 +721,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, $"{line[j]}");
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
                 }
             }
         }
@@ -753,8 +753,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, $"{line[j]}");
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.RawString}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
                 }
             }
         }
