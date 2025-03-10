@@ -8,7 +8,7 @@ using Dalamud.Plugin.Ipc;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace SpecialWeaponProgessOverview;
 
@@ -60,7 +60,7 @@ public class InventoryWindow : Window, IDisposable
         SetupIPC(true);
     }
 
-    private static void LogoutCacheClear()
+    private static void LogoutCacheClear(int a, int b)
     {
         RetainerData.Clear();
     }
@@ -389,7 +389,7 @@ public class InventoryWindow : Window, IDisposable
             ImGui.Text("未获取到角色信息");
             return;
         }
-        var playerJobId = localPlayer.ClassJob.Id;
+        var playerJobId = localPlayer.ClassJob.RowId;
         ImGui.Text($"Is Allagan Tools available: {ATools}");
         ImGui.Text($"点一下数字能获取对应武器名字（然后打开item search可以查预览）");
         if(ImGui.IsItemHovered())
@@ -564,13 +564,13 @@ public class InventoryWindow : Window, IDisposable
         for (var i = 0; i < needs.Count; i++)
         {
             if (needs[i] == 0) continue;
-            res += $"{needs[i]}个{ItemSheet.GetRow(needItemId[i])?.Name.RawString}, ";
+            res += $"{needs[i]}个{ItemSheet.GetRow(needItemId[i]).Name.ExtractText()}, ";
         }
         res += "\n仍需";
         for (var i = 0; i < needs.Count; i++)
         {
             if (needs[i] == 0) continue;
-            res += $"{needs[i] - have[i]}个{ItemSheet.GetRow(needItemId[i])?.Name.RawString}, ";
+            res += $"{needs[i] - have[i]}个{ItemSheet.GetRow(needItemId[i]).Name.ExtractText()}, ";
         }
         return res;
     }
@@ -635,7 +635,7 @@ public class InventoryWindow : Window, IDisposable
             var line = animaWeaponProcess[jobId];
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
-            ImGui.Text(ClassJobSheet.GetRow(jobId)?.Name.RawString);
+            ImGui.Text(ClassJobSheet.GetRow(jobId).Name.ExtractText());
 
             for (var j = 0; j < line.Count; j++)
             {
@@ -644,8 +644,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, $"{line[j]}");
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
                 }
             }
         }
@@ -678,7 +678,7 @@ public class InventoryWindow : Window, IDisposable
             var line = eurekaWeaponProcess[jobId];
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
-            ImGui.Text(ClassJobSheet.GetRow(jobId)?.Name.RawString);
+            ImGui.Text(ClassJobSheet.GetRow(jobId).Name.ExtractText());
 
             for (var j = 0; j < line.Count; j++)
             {
@@ -687,8 +687,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, $"{line[j]}");
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
                 }
             }
         }
@@ -712,7 +712,7 @@ public class InventoryWindow : Window, IDisposable
             var line = bozjaWeaponProcess[jobId];
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
-            ImGui.Text(ClassJobSheet.GetRow(jobId)?.Name.RawString);
+            ImGui.Text(ClassJobSheet.GetRow(jobId).Name.ExtractText());
 
             for (var j = 0; j < line.Count; j++)
             {
@@ -721,8 +721,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, $"{line[j]}");
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.RawString}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
                 }
             }
         }
@@ -744,7 +744,7 @@ public class InventoryWindow : Window, IDisposable
             var line = mandervillousWeaponProcess[jobId];
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
-            ImGui.Text(ClassJobSheet.GetRow(jobId)?.Name.RawString);
+            ImGui.Text(ClassJobSheet.GetRow(jobId).Name.ExtractText());
 
             for (var j = 0; j < line.Count; j++)
             {
@@ -753,8 +753,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, $"{line[j]}");
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.RawString}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.RawString} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
                 }
             }
         }
