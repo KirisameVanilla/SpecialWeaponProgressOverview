@@ -6,7 +6,7 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Ipc;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
@@ -221,10 +221,12 @@ public class InventoryWindow : Window, IDisposable
         return numbers;
     }
 
-    private static readonly List<List<uint>> ZodiacWeaponId = [];
+   private static readonly List<List<uint>> ZodiacWeaponId = new List<List<uint>>();
+   
 
-    private static readonly List<List<uint>> AnimaWeaponId =
-    [
+    private static readonly List<List<uint>> AnimaWeaponId = new List<List<uint>>
+    {
+        
         GetListIntInRange(13611, 13),//魂武一阶段，元灵武器·元灵
         GetListIntInRange(13597, 13),//魂武二阶段，元灵武器·觉醒
         GetListIntInRange(13223, 13),//魂武三阶段，新元灵武器
@@ -233,10 +235,10 @@ public class InventoryWindow : Window, IDisposable
         GetListIntInRange(15237, 13),//魂武六阶段，元灵武器·灵慧
         GetListIntInRange(15251, 13),//魂武七阶段，真元灵武器
         GetListIntInRange(16050, 13),//魂武八阶段，真元灵武器·灵光
-    ];
+    };
 
-    private static readonly List<List<uint>> EurekaWeaponId =
-    [
+    private static readonly List<List<uint>> EurekaWeaponId = new List<List<uint>>
+    {
         GetListIntInRange(21942, 15),//禁地兵装
         GetListIntInRange(21958, 15),//禁地兵装+1
         GetListIntInRange(21974, 15),//禁地兵装+2
@@ -252,25 +254,25 @@ public class InventoryWindow : Window, IDisposable
         GetListIntInRange(24675, 15),//新兵装
         GetListIntInRange(24691, 15),//优雷卡
         GetListIntInRange(24707, 15),//优雷卡·改
-    ];
+    };
 
-    private static readonly List<List<uint>> BozjaWeaponId =
-    [
+    private static readonly List<List<uint>> BozjaWeaponId = new List<List<uint>>
+    {
         GetListIntInRange(30228, 17),//义军武器
         GetListIntInRange(30767, 17),//改良型义军武器
         GetListIntInRange(30785, 17),//回忆
         GetListIntInRange(32651, 17),//裁决
         GetListIntInRange(32669, 17),//改良型裁决
         GetListIntInRange(33462, 17),//女王武器
-    ];
+    };
 
-    private static readonly List<List<uint>> MandervillousWeaponId =
-    [
+    private static readonly List<List<uint>> MandervillousWeaponId = new List<List<uint>>
+    {
         GetListIntInRange(38400, 19), //曼德维尔武器
         GetListIntInRange(39144, 19), //曼德维尔武器·惊异
         GetListIntInRange(39920, 19), //曼德维尔武器·威严
         GetListIntInRange(40932, 19), //曼德维尔武器·盈满
-    ];
+    };
 
     private static readonly List<uint> AnimaWeaponJobIdList = new()
     {
@@ -345,9 +347,9 @@ public class InventoryWindow : Window, IDisposable
 
 
     private readonly string[] specialWeaponSeriesList =
-    [
+    {
         "未选中","古武","魂武","优武","义武","曼武"
-    ];
+    };
 
     private int selectedWeaponSeriesIndex = 0;
 
@@ -537,8 +539,8 @@ public class InventoryWindow : Window, IDisposable
             }
         }
 
-        List<int> have = [];
-        List<int> needs = [0, 0, 0, 0, 0, 0];
+        List<int> have = new List<int>();
+        List<int> needs = new List<int> { 0, 0, 0, 0, 0, 0 };
         foreach (var jobId in BozjaWeaponJobIdList)
         {
             for (var i = 0; i < BozjaWeaponId.Count; i++)
@@ -552,8 +554,8 @@ public class InventoryWindow : Window, IDisposable
         needs[3] *= 15;
         needs[4] *= 15;
         needs[5] *= 15;
-        List<int> newNeeds = [needs[0], needs[1], needs[1], needs[1], needs[2], needs[3], needs[4], needs[5]];
-        List<uint> needItemId = [30273, 31573, 31574, 31575, 31576, 32956, 32959, 33767];
+        List<int> newNeeds = new List<int> {needs[0], needs[1], needs[1], needs[1], needs[2], needs[3], needs[4], needs[5]};
+        List<uint> needItemId = new List<uint> {30273, 31573, 31574, 31575, 31576, 32956, 32959, 33767};
         needs = newNeeds;
         foreach (var id in needItemId)
         {
@@ -597,8 +599,8 @@ public class InventoryWindow : Window, IDisposable
             }
         }
 
-        List<int> have = [GetItemCountTotal(38420), GetItemCountTotal(38940), GetItemCountTotal(40322), GetItemCountTotal(41032)];
-        List<int> needs = [0, 0, 0, 0];
+        List<int> have = new List<int>{GetItemCountTotal(38420), GetItemCountTotal(38940), GetItemCountTotal(40322), GetItemCountTotal(41032)};
+        List<int> needs = new List<int> { 0, 0, 0, 0 };
         foreach (var jobId in MandervillousWeaponJobIdList)
         {
             for (var i = 0; i < MandervillousWeaponId.Count; i++)
