@@ -10,7 +10,7 @@ using Dalamud.Bindings.ImGui;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
-namespace SpecialWeaponProgessOverview;
+namespace SpecialWeaponProgressOverview;
 
 public class InventoryWindow : Window, IDisposable
 {

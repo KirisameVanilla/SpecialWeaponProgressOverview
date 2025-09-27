@@ -2,7 +2,7 @@ using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 
-namespace SpecialWeaponProgessOverview;
+namespace SpecialWeaponProgressOverview;
 
 public sealed class Plugin : IDalamudPlugin
 {

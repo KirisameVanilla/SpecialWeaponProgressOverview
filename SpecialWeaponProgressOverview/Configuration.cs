@@ -1,7 +1,7 @@
 using System;
 using Dalamud.Configuration;
 
-namespace SpecialWeaponProgessOverview;
+namespace SpecialWeaponProgressOverview;
 
 [Serializable]
 public class Configuration : IPluginConfiguration
