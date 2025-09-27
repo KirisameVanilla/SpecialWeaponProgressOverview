@@ -819,7 +819,7 @@ public class InventoryWindow : Window, IDisposable
         ImGui.BeginTable("PhantomWeaponChart", PhantomWeaponId.Count + 1, ImGuiTableFlags.Resizable);
         ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn(label:"幻境武器·半影", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn(label:"幻境武器·全影", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn(label:"幻境武器·本影", ImGuiTableColumnFlags.None);
         ImGui.TableHeadersRow();
         foreach (var jobId in PhantomWeaponJobIdList)
         { 
