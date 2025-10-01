@@ -20,10 +20,10 @@ public class DalamudApi
     [PluginService] public static ISigScanner SigScanner { get; set; } = null!;
     [PluginService] public static IKeyState KeyState { get; set; } = null!;
     [PluginService] public static ICondition Condition { get; set; } = null!;
-    public static Configuration config = new();
+    public static Configuration Config = new();
 
 
-    internal static bool IsInitialized = false;
+    internal static bool IsInitialized;
     public static void Init(IDalamudPluginInterface pi)
     {
         if (IsInitialized)
@@ -37,7 +37,7 @@ public class DalamudApi
         }
         catch (Exception ex)
         {
-            PluginLog.Error($"Error initalising {nameof(DalamudApi)}", ex);
+            PluginLog.Error($"Error initialising {nameof(DalamudApi)}", ex);
         }
     }
 }
