@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Dalamud.NET.Sdk/13.0.0">
   <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
   <PropertyGroup>

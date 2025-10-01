@@ -2,7 +2,7 @@ using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 
-namespace SpecialWeaponProgessOverview;
+namespace SpecialWeaponProgressOverview;
 
 public sealed class Plugin : IDalamudPlugin
 {
@@ -21,7 +21,7 @@ public sealed class Plugin : IDalamudPlugin
             HelpMessage = "Open main page"
         });
 
-        pluginInterface.UiBuilder.Draw += DrawUI;
+        pluginInterface.UiBuilder.Draw += DrawUi;
         pluginInterface.UiBuilder.OpenMainUi += ToggleMainWindow;
         InventoryWindow.Init();
         InventoryWindow.InitChart();
@@ -40,7 +40,7 @@ public sealed class Plugin : IDalamudPlugin
         ToggleMainWindow();
     }
 
-    private void DrawUI() => WindowSystem.Draw();
+    private void DrawUi() => WindowSystem.Draw();
 
     public void ToggleMainWindow() => InventoryWindow.Toggle();
 
