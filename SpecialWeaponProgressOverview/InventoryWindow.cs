@@ -209,7 +209,7 @@ public class InventoryWindow : Window, IDisposable
         return numbers;
     }
 
-   private static readonly List<List<uint>> ZodiacWeaponId = new List<List<uint>>();
+    private static readonly List<List<uint>> ZodiacWeaponId = new List<List<uint>>();
    
 
     private static readonly List<List<uint>> AnimaWeaponId = new List<List<uint>>
@@ -287,6 +287,16 @@ public class InventoryWindow : Window, IDisposable
         GetListIntInRange(39743, 11), //乔菈卓绝
         GetListIntInRange(41180, 11), //诺弗兰特远见
         GetListIntInRange(41191, 11), //领航星
+    };
+
+    private static readonly List<List<uint>> UltimateWeaponId = new List<List<uint>>
+    {
+        GetListIntInRange(20959, 15), //巴哈
+        GetListIntInRange(22868, 15), //神兵
+        GetListIntInRange(28289, 17), //亚历山大
+        GetListIntInRange(36943, 19), //龙诗
+        new List<uint> { 39164, 39165, 39166, 39167, 39168, 39169, 39170, 39171, 39172, 39173, 39174, 39175, 39176, 39177, 39178, 39179, 39180, 39181, 39182, 43642, 43663 }, //欧米茄
+        GetListIntInRange(44721, 21), //伊甸
     };
 
     
@@ -369,17 +379,26 @@ public class InventoryWindow : Window, IDisposable
         12, 13, 14, 15,
         16, 17, 18,
     };
+    
+    private static readonly List<uint> UltimateWeaponJobIdList = new()
+    {
+        19, 21, 32, 37,
+        24, 28, 33, 40,
+        20, 22, 39, 34, 30, 41,
+        23, 31, 38,
+        25, 27, 35, 42,
+    };
 
     private static readonly Dictionary<uint, int> JobIndex = new()
     {
         { 19, 0 }, { 21, 2 }, { 32, 6 }, { 37, 15 },
         { 24, 8 }, { 28, 11 }, { 33, 12 }, { 40, 17 },
-        { 20, 1 }, { 22, 3 }, { 34, 13 }, { 39, 18 }, { 30, 5 },
+        { 20, 1 }, { 22, 3 }, { 34, 13 }, { 39, 18 }, { 30, 5 },{ 41, 19 },
         { 23, 4 }, { 31, 7 }, { 38, 16 },
-        { 25, 9 }, { 27, 10 }, { 35, 14 },
+        { 25, 9 }, { 27, 10 }, { 35, 14 }, { 42, 20 }
     };
 
-    private static readonly Dictionary<uint, int> PhantomJobIndex = new()
+    private static readonly Dictionary<uint, int> NewJobIndex = new()
     {
         { 19, 0 }, { 21, 2 }, { 32, 10 }, { 37, 15 },
         { 24, 5 }, { 28, 8 }, { 33, 12 }, { 40, 18 },
@@ -405,6 +424,7 @@ public class InventoryWindow : Window, IDisposable
         {6,21},//幻武
         {7,11},//天钢
         {8,11},//莫雯
+        {9,21},//绝境战
     };
 
     private Dictionary<uint, List<int>> zodiacWeaponProcess = new();
@@ -415,13 +435,14 @@ public class InventoryWindow : Window, IDisposable
     private Dictionary<uint, List<int>> phantomWeaponProcess = new();
     private Dictionary<uint, List<int>> skysteelWeaponProcess = new();
     private Dictionary<uint, List<int>> splendorousWeaponProcess = new();
+    private Dictionary<uint, List<int>> ultimateWeaponProcess = new();
 
 
 
 
     private readonly string[] specialWeaponSeriesList =
     {
-        "未选中","古武","魂武","优武","义武","曼武","幻武","天钢","莫雯"
+        "未选中","古武","魂武","优武","义武","曼武","幻武","天钢","莫雯","绝境战"
     };
 
     private int selectedWeaponSeriesIndex;
@@ -468,6 +489,11 @@ public class InventoryWindow : Window, IDisposable
         for (var i = 0; i < JobsOfSpecialWeapon[8]; i++)
         {
             splendorousWeaponProcess.Add(SplendorousWeaponJobIdList[i], new List<int>(new int[SplendorousWeaponId.Count]));
+        }
+        //绝境战
+        for (var i = 0; i < JobsOfSpecialWeapon[9]; i++)
+        {
+            ultimateWeaponProcess.Add(UltimateWeaponJobIdList[i], new List<int>(new int[UltimateWeaponId.Count]));
         }
     }
 
@@ -539,6 +565,12 @@ public class InventoryWindow : Window, IDisposable
                         DrawSplendorous();
                         break;
                     }
+                case 9:
+                    {
+                        GetProcessData(9, UltimateWeaponId, UltimateWeaponJobIdList, ref ultimateWeaponProcess);
+                        DrawUltimate();
+                        break;
+                    }
             }
         }
     }
@@ -558,16 +590,38 @@ public class InventoryWindow : Window, IDisposable
             for (var j = 0; j < weaponIdList.Count; j++)//阶段
             {
                 var curJobId = jobIdList[i];
-                // 针对Phantom武器使用专用索引
-                var jobIndex = weaponIndex == 6 ? PhantomJobIndex[curJobId] : 
-                                   (weaponIndex is 7 or 8) ? LifeJobIndex[curJobId] :
-                                   JobIndex[curJobId];
-                var curWeaponId = weaponIdList[j][jobIndex];
-                var curWeaponCount = GetItemCountTotal(curWeaponId);
-                weaponProcess[curJobId][j] = curWeaponCount;
+                // 针对Ultimate武器(绝境战)的特殊处理
+                int jobIndex;
+                if (weaponIndex == 9) // 绝境战
+                {
+                    // 前5项使用JobIndex，第6项使用NewJobIndex
+                    jobIndex = j < 5 ? JobIndex[curJobId] : NewJobIndex[curJobId];
+                }
+                else
+                {
+                    // 针对Phantom武器使用专用索引
+                    jobIndex = weaponIndex == 6 ? NewJobIndex[curJobId] : 
+                                  (weaponIndex is 7 or 8) ? LifeJobIndex[curJobId] :
+                                  JobIndex[curJobId];
+                }
+                
+                // 添加边界检查
+                if (jobIndex < weaponIdList[j].Count)
+                {
+                    var curWeaponId = weaponIdList[j][jobIndex];
+                    var curWeaponCount = GetItemCountTotal(curWeaponId);
+                    weaponProcess[curJobId][j] = curWeaponCount;
+                }
+                else
+                {
+                    // 如果索引越界，则设置为0
+                    weaponProcess[curJobId][j] = 0;
+                }
             }
         }
     }
+
+
 
 
     // private string ComputeNeedsZodiac()
@@ -928,8 +982,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(PhantomWeaponId[j][PhantomJobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(PhantomWeaponId[j][PhantomJobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(PhantomWeaponId[j][NewJobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(PhantomWeaponId[j][NewJobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
                 }
             }
         }
@@ -1006,4 +1060,52 @@ public class InventoryWindow : Window, IDisposable
         }
         ImGui.EndTable();
     }
+    
+    private void DrawUltimate()
+    { 
+        ImGui.Text("");
+        ImGui.BeginTable("UltimateWeaponChart", UltimateWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("绝巴哈", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("绝神兵", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("绝亚", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("绝龙诗", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("绝欧米茄", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("绝伊甸", ImGuiTableColumnFlags.None);
+        ImGui.TableHeadersRow();
+        foreach (var jobId in UltimateWeaponJobIdList)
+        {
+            var line = ultimateWeaponProcess[jobId];
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            ImGui.Text(ClassJobSheet.GetRow(jobId).Name.ExtractText());
+            
+            for (var j = 0; j < line.Count; j++)
+            {
+                // 使用与GetProcessData相同的索引逻辑确定jobIndex
+                int jobIndex = j < 5 ? JobIndex[jobId] : NewJobIndex[jobId];
+                
+                // 检查索引是否在有效范围内
+                if (jobIndex >= UltimateWeaponId[j].Count)
+                {
+                    // 超出数组范围的格子显示为空格
+                    ImGui.TableNextColumn();
+                    ImGui.Text("你别急，小吉还在做！");
+                    continue;
+                }
+                
+                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
+                ImGui.TableNextColumn();
+                string displayText = line[j] > 0 ? "●" : "◯";
+                ImGui.TextColored(color, displayText);
+                if (ImGui.IsItemClicked())
+                {
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(UltimateWeaponId[j][jobIndex]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(UltimateWeaponId[j][jobIndex]).Name.ExtractText()} 已复制到剪贴板");
+                }
+            }
+        }
+        ImGui.EndTable();
+    }
+
 }

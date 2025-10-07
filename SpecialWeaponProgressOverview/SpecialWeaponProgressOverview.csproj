@@ -1,15 +1,24 @@
 ﻿<Project Sdk="Dalamud.NET.Sdk/13.0.0">
-  <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
   <PropertyGroup>
-    <Version>0.0.0.3</Version>
-    <Authors>KirisameVanilla</Authors>
-    <Description>一个用来检测和快速查询肝武进度的小工具。
-（如肝武放置在雇员身上则需要官库的Allagan Tools）</Description>
-    <PackageProjectUrl>https://github.com/KirisameVanilla/SpecialWeaponProgressOverview</PackageProjectUrl>
+    <Version>0.0.0.4</Version>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-    <IsPackable>false</IsPackable>
-    <RepositoryUrl>https://github.com/KirisameVanilla/SpecialWeaponProgressOverview</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+
+  <Target Name="PackagePlugin" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <DalamudPackager
+      ProjectDir="$(ProjectDir)"
+      OutputPath="$(OutputPath)"
+      AssemblyName="$(AssemblyName)"
+      MakeZip="false"/>
+  </Target>
+
+  <Target Name="PackagePlugin" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <DalamudPackager
+      ProjectDir="$(ProjectDir)"
+      OutputPath="$(OutputPath)"
+      AssemblyName="$(AssemblyName)"
+      MakeZip="true"/>
+  </Target>
 </Project>
+
