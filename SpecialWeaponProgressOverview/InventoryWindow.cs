@@ -760,7 +760,7 @@ public class InventoryWindow : Window, IDisposable
 
     private void DrawAnima()
     {
-        ImGui.BeginTable("AnimaWeaponChart", AnimaWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.BeginTable("AnimaWeaponChart", AnimaWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
         ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("元灵武器·元灵", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("元灵武器·觉醒", ImGuiTableColumnFlags.None);
@@ -780,9 +780,10 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
+                string displayText = line[j] > 0 ? "●" : "◯";
+                ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
                     ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
@@ -792,11 +793,10 @@ public class InventoryWindow : Window, IDisposable
         }
         ImGui.EndTable();
     }
-
-
+    
     private void DrawEureka()
     {
-        ImGui.BeginTable("EurekaWeaponChart", EurekaWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.BeginTable("EurekaWeaponChart", EurekaWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
         ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("禁地兵装", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("禁地兵装+1", ImGuiTableColumnFlags.None);
@@ -823,9 +823,10 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
+                string displayText = line[j] > 0 ? "●" : "◯";
+                ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
                     ImGui.SetClipboardText($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
@@ -839,7 +840,7 @@ public class InventoryWindow : Window, IDisposable
     private void DrawBozja()
     {
         ImGui.Text($"{ComputeNeedsBozja()}");
-        ImGui.BeginTable("BozjaWeaponChart", BozjaWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.BeginTable("BozjaWeaponChart", BozjaWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
         ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("义军武器", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("改良型义军武器", ImGuiTableColumnFlags.None);
@@ -857,9 +858,10 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
+                string displayText = line[j] > 0 ? "●" : "◯";
+                ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
                     ImGui.SetClipboardText($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
@@ -873,7 +875,7 @@ public class InventoryWindow : Window, IDisposable
     private void DrawMandervillous()
     {
         ImGui.Text($"{ComputeNeedsMandervillous()}");
-        ImGui.BeginTable("MandervillousWeaponChart", MandervillousWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.BeginTable("MandervillousWeaponChart", MandervillousWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
         ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("曼德维尔武器", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("曼德维尔武器·惊异", ImGuiTableColumnFlags.None);
@@ -889,9 +891,10 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
+                string displayText = line[j] > 0 ? "●" : "◯";
+                ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
                     ImGui.SetClipboardText($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
@@ -905,7 +908,7 @@ public class InventoryWindow : Window, IDisposable
     private void DrawPhantom()
     { 
         ImGui.Text($"{ComputeNeedsPhantom()}");
-        ImGui.BeginTable("PhantomWeaponChart", PhantomWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.BeginTable("PhantomWeaponChart", PhantomWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
         ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn(label:"幻境武器·半影", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn(label:"幻境武器·本影", ImGuiTableColumnFlags.None);
@@ -919,9 +922,10 @@ public class InventoryWindow : Window, IDisposable
             
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
+                string displayText = line[j] > 0 ? "●" : "◯";
+                ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
                     ImGui.SetClipboardText($"{ItemSheet.GetRow(PhantomWeaponId[j][PhantomJobIndex[jobId]]).Name.ExtractText()}");
@@ -935,7 +939,7 @@ public class InventoryWindow : Window, IDisposable
     private void DrawSkysteel()
     {
         ImGui.Text("");
-        ImGui.BeginTable("SkysteelWeaponChart", SkysteelWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.BeginTable("SkysteelWeaponChart", SkysteelWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
         ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("天钢工具", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("天钢工具+1", ImGuiTableColumnFlags.None);
@@ -953,9 +957,10 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
+                string displayText = line[j] > 0 ? "●" : "◯";
+                ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
                     ImGui.SetClipboardText($"{ItemSheet.GetRow(SkysteelWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
@@ -969,7 +974,7 @@ public class InventoryWindow : Window, IDisposable
     private void DrawSplendorous()
     { 
         ImGui.Text("");
-        ImGui.BeginTable("SplendorousWeaponChart", SplendorousWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.BeginTable("SplendorousWeaponChart", SplendorousWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
         ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("卓越工具", ImGuiTableColumnFlags.None);
         ImGui.TableSetupColumn("改良型卓越工具", ImGuiTableColumnFlags.None);
@@ -988,9 +993,10 @@ public class InventoryWindow : Window, IDisposable
             
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
+                string displayText = line[j] > 0 ? "●" : "◯";
+                ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
                     ImGui.SetClipboardText($"{ItemSheet.GetRow(SplendorousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");

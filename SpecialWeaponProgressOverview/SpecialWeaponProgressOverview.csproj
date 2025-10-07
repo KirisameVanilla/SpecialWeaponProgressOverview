@@ -2,7 +2,7 @@
   <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
   <PropertyGroup>
-    <Version>0.0.0.2</Version>
+    <Version>0.0.0.3</Version>
     <Authors>KirisameVanilla</Authors>
     <Description>一个用来检测和快速查询肝武进度的小工具。
 （如肝武放置在雇员身上则需要官库的Allagan Tools）</Description>
