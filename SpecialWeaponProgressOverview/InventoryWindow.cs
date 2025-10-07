@@ -264,8 +264,29 @@ public class InventoryWindow : Window, IDisposable
 
     private static readonly List<List<uint>> PhantomWeaponId = new List<List<uint>>
     {
-        GetListIntInRange(from:47869, count: 21), //幻境武器·半影
-        GetListIntInRange(from:47006, count: 21), //幻境武器·本影
+        GetListIntInRange(47869, 21), //幻境武器·半影
+        GetListIntInRange(47006, 21), //幻境武器·本影
+    };
+
+    private static readonly List<List<uint>> SkysteelWeaponId = new List<List<uint>>
+    {
+        GetListIntInRange(29612, 11), //天钢工具
+        GetListIntInRange(29623, 11), //天钢工具+1
+        GetListIntInRange(29634, 13), //龙诗工具
+        GetListIntInRange(30282, 13), //改良型龙诗工具
+        GetListIntInRange(30293, 13), //天诗工具
+        GetListIntInRange(31714, 13), //天工工具
+    };
+
+    private static readonly List<List<uint>> SplendorousWeaponId = new List<List<uint>>
+    {
+        GetListIntInRange(38715, 11), //卓越
+        GetListIntInRange(38726, 11), //改良型卓越
+        GetListIntInRange(38737, 11), //水晶
+        GetListIntInRange(39732, 11), //乔菈水晶
+        GetListIntInRange(39743, 11), //乔菈卓绝
+        GetListIntInRange(41180, 11), //诺弗兰特远见
+        GetListIntInRange(41191, 11), //领航星
     };
 
     
@@ -276,6 +297,9 @@ public class InventoryWindow : Window, IDisposable
     // 20武僧 22龙骑 30忍者 34武士 39镰刀 41蝰蛇
     // 23诗人 31机工 38舞者
     // 25黑魔 27召唤 35赤魔 42画家
+    // 8刻木 9锻铁 10铸甲 11雕金
+    // 12制革 13裁缝 14炼金 15烹调
+    // 16采矿 17园艺 18捕鱼
     
     
     private static readonly List<uint> AnimaWeaponJobIdList = new()
@@ -331,6 +355,20 @@ public class InventoryWindow : Window, IDisposable
         23, 31, 38,
         25, 27, 35, 42,
     };
+    
+    private static readonly List<uint> SkysteelWeaponJobIdList = new()
+    {
+        8, 9, 10, 11,
+        12, 13, 14, 15,
+        16, 17, 18,
+    };
+    
+    private static readonly List<uint> SplendorousWeaponJobIdList = new()
+    {
+        8, 9, 10, 11,
+        12, 13, 14, 15,
+        16, 17, 18,
+    };
 
     private static readonly Dictionary<uint, int> JobIndex = new()
     {
@@ -349,6 +387,13 @@ public class InventoryWindow : Window, IDisposable
         { 23, 4 }, { 31, 11 }, { 38, 16 },
         { 25, 6 }, { 27, 7 }, { 35, 14 }, { 42, 20 }
     };
+    
+    private static readonly Dictionary<uint, int> LifeJobIndex = new()
+    {
+        { 8, 0 }, { 9, 1 }, { 10, 2 }, { 11, 3 },
+        { 12, 4 }, { 13, 5 }, { 14, 6 }, { 15, 7 },
+        { 16, 8 }, { 17, 9 }, { 18, 10 },
+    };
 
     private static readonly Dictionary<int, int> JobsOfSpecialWeapon = new()
     {
@@ -358,6 +403,8 @@ public class InventoryWindow : Window, IDisposable
         {4,17},//义武
         {5,19},//曼武
         {6,21},//幻武
+        {7,11},//天钢
+        {8,11},//莫雯
     };
 
     private Dictionary<uint, List<int>> zodiacWeaponProcess = new();
@@ -366,13 +413,15 @@ public class InventoryWindow : Window, IDisposable
     private Dictionary<uint, List<int>> bozjaWeaponProcess = new();
     private Dictionary<uint, List<int>> mandervillousWeaponProcess = new();
     private Dictionary<uint, List<int>> phantomWeaponProcess = new();
+    private Dictionary<uint, List<int>> skysteelWeaponProcess = new();
+    private Dictionary<uint, List<int>> splendorousWeaponProcess = new();
 
 
 
 
     private readonly string[] specialWeaponSeriesList =
     {
-        "未选中","古武","魂武","优武","义武","曼武","幻武"
+        "未选中","古武","魂武","优武","义武","曼武","幻武","天钢","莫雯"
     };
 
     private int selectedWeaponSeriesIndex;
@@ -409,6 +458,16 @@ public class InventoryWindow : Window, IDisposable
         for (var i = 0; i < JobsOfSpecialWeapon[6]; i++)
         {
             phantomWeaponProcess.Add(PhantomWeaponJobIdList[i], new List<int>(new int[PhantomWeaponId.Count]));
+        }
+        //天钢
+        for (var i = 0; i < JobsOfSpecialWeapon[7]; i++)
+        {
+            skysteelWeaponProcess.Add(SkysteelWeaponJobIdList[i], new List<int>(new int[SkysteelWeaponId.Count]));
+        }
+        //莫雯
+        for (var i = 0; i < JobsOfSpecialWeapon[8]; i++)
+        {
+            splendorousWeaponProcess.Add(SplendorousWeaponJobIdList[i], new List<int>(new int[SplendorousWeaponId.Count]));
         }
     }
 
@@ -467,7 +526,19 @@ public class InventoryWindow : Window, IDisposable
                         GetProcessData(6, PhantomWeaponId, PhantomWeaponJobIdList, ref phantomWeaponProcess);
                         DrawPhantom();
                         break;
-                }
+                    }
+                case 7:
+                    {
+                        GetProcessData(7, SkysteelWeaponId, SkysteelWeaponJobIdList, ref skysteelWeaponProcess);
+                        DrawSkysteel();
+                        break;
+                    }
+                case 8:
+                    {
+                        GetProcessData(8, SplendorousWeaponId, SplendorousWeaponJobIdList, ref splendorousWeaponProcess);
+                        DrawSplendorous();
+                        break;
+                    }
             }
         }
     }
@@ -488,7 +559,9 @@ public class InventoryWindow : Window, IDisposable
             {
                 var curJobId = jobIdList[i];
                 // 针对Phantom武器使用专用索引
-                var jobIndex = weaponIndex == 6 ? PhantomJobIndex[curJobId] : JobIndex[curJobId];
+                var jobIndex = weaponIndex == 6 ? PhantomJobIndex[curJobId] : 
+                                   (weaponIndex is 7 or 8) ? LifeJobIndex[curJobId] :
+                                   JobIndex[curJobId];
                 var curWeaponId = weaponIdList[j][jobIndex];
                 var curWeaponCount = GetItemCountTotal(curWeaponId);
                 weaponProcess[curJobId][j] = curWeaponCount;
@@ -857,5 +930,74 @@ public class InventoryWindow : Window, IDisposable
             }
         }
         ImGui.EndTable();
-    }   
+    }
+
+    private void DrawSkysteel()
+    {
+        ImGui.Text("");
+        ImGui.BeginTable("SkysteelWeaponChart", SkysteelWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("天钢工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("天钢工具+1", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("龙诗工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("改良型龙诗工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("天诗工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("天工工具", ImGuiTableColumnFlags.None);
+        ImGui.TableHeadersRow();
+        foreach (var jobId in SkysteelWeaponJobIdList)
+        { 
+            var line = skysteelWeaponProcess[jobId];
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            ImGui.Text(ClassJobSheet.GetRow(jobId).Name.ExtractText());
+
+            for (var j = 0; j < line.Count; j++)
+            {
+                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                ImGui.TableNextColumn();
+                ImGui.TextColored(color, $"{line[j]}");
+                if (ImGui.IsItemClicked())
+                {
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SkysteelWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SkysteelWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
+                }
+            }
+        }
+        ImGui.EndTable();
+    }
+    
+    private void DrawSplendorous()
+    { 
+        ImGui.Text("");
+        ImGui.BeginTable("SplendorousWeaponChart", SplendorousWeaponId.Count + 1, ImGuiTableFlags.Resizable);
+        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("卓越工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("改良型卓越工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("水晶工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("乔菈水晶工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("乔菈卓绝工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("诺弗兰特远见工具", ImGuiTableColumnFlags.None);
+        ImGui.TableSetupColumn("领航星工具", ImGuiTableColumnFlags.None);
+        ImGui.TableHeadersRow();
+        foreach (var jobId in SplendorousWeaponJobIdList)
+        { 
+            var line = splendorousWeaponProcess[jobId];
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            ImGui.Text(ClassJobSheet.GetRow(jobId).Name.ExtractText());
+            
+            for (var j = 0; j < line.Count; j++)
+            {
+                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
+                ImGui.TableNextColumn();
+                ImGui.TextColored(color, $"{line[j]}");
+                if (ImGui.IsItemClicked())
+                {
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SplendorousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SplendorousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
+                }
+            }
+        }
+        ImGui.EndTable();
+    }
 }
