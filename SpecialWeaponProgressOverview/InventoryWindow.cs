@@ -1003,8 +1003,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SkysteelWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SkysteelWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SkysteelWeaponId[j][LifeJobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SkysteelWeaponId[j][LifeJobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
                 }
             }
         }
@@ -1039,8 +1039,8 @@ public class InventoryWindow : Window, IDisposable
                 ImGui.TextColored(color, displayText);
                 if (ImGui.IsItemClicked())
                 {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SplendorousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SplendorousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
+                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SplendorousWeaponId[j][LifeJobIndex[jobId]]).Name.ExtractText()}");
+                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SplendorousWeaponId[j][LifeJobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
                 }
             }
         }
