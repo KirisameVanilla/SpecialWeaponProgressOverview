@@ -12,7 +12,7 @@ public sealed class Plugin : IDalamudPlugin
     private InventoryWindow InventoryWindow { get; init; }
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
-        InventoryWindow = new InventoryWindow(this);
+        InventoryWindow = new InventoryWindow();
         DalamudApi.Init(pluginInterface);
         WindowSystem.AddWindow(InventoryWindow);
 
