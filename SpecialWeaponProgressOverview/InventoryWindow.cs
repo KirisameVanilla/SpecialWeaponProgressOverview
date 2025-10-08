@@ -9,6 +9,9 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using Dalamud.Bindings.ImGui;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Game.Text;
 
 namespace SpecialWeaponProgressOverview;
 
@@ -44,6 +47,7 @@ public class InventoryWindow : Window, IDisposable
             }
         }
     }
+    
     internal static void Init()
     {
         Initialized = DalamudApi.PluginInterface.GetIpcSubscriber<bool, bool>("AllaganTools.Initialized");
@@ -65,14 +69,14 @@ public class InventoryWindow : Window, IDisposable
     }
 
     public static readonly Dictionary<ulong, Dictionary<uint, ItemInfo>> RetainerData = new Dictionary<ulong, Dictionary<uint, ItemInfo>>();
+    
     public class ItemInfo(uint itemId, uint quantity, uint hqQuantity)
     {
         public uint ItemId { get; set; } = itemId;
         public uint Quantity { get; set; } = quantity;
         public uint HqQuantity { get; set; } = hqQuantity;
     }
-
-
+    
     public static uint GetRetainerInventoryItem(uint itemId, ulong retainerId, bool hqonly = false)
     {
         if (ATools && ItemCount != null)
@@ -182,7 +186,48 @@ public class InventoryWindow : Window, IDisposable
         IsInitialized = null;
         ItemCount = null;
     }
-
+    
+    private void PrintItemPayload(uint itemId)
+    {
+        var itemRow = ItemSheet.GetRow(itemId);
+        var payloadList = new List<Payload>
+        {
+            new UIForegroundPayload((ushort)(0x223 + itemRow.Rarity * 2)),
+            new UIGlowPayload((ushort)(0x224 + itemRow.Rarity * 2)),
+            new ItemPayload(itemId, false),
+            new UIForegroundPayload(500),
+            new UIGlowPayload(501),
+            new TextPayload($"{(char)SeIconChar.LinkMarker}"),
+            new UIForegroundPayload(0),
+            new UIGlowPayload(0),
+            new TextPayload(itemRow.Name.ExtractText()),
+            new RawPayload([0x02, 0x27, 0x07, 0xCF, 0x01, 0x01, 0x01, 0xFF, 0x01, 0x03]),
+            new RawPayload([0x02, 0x13, 0x02, 0xEC, 0x03])
+        };
+        var messagePayloads = new List<Payload>(payloadList);
+        messagePayloads.AddRange([new TextPayload(" 已复制到剪切板")]);
+        var fullMessage = new SeString(messagePayloads);
+        DalamudApi.ChatGui.Print(new XivChatEntry { Message = fullMessage });
+    }
+    
+    private void DrawWeaponCell(int count, uint itemId)
+    {
+        Vector4 color = count > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
+        string displayText = count > 0 ? "●" : "◯";
+        ImGui.TextColored(color, displayText);
+        
+        if (ImGui.IsItemClicked())
+        {
+            CopyItemNameToClipboard(itemId);
+            PrintItemPayload(itemId);
+        }
+    }
+    
+    private void CopyItemNameToClipboard(uint itemId)
+    {
+        var itemName = ItemSheet.GetRow(itemId).Name.ExtractText();
+        ImGui.SetClipboardText(itemName);
+    }
     static List<uint> GetListIntInRange(int from, int count)
     {
         var numbers = new List<uint>();
@@ -195,8 +240,7 @@ public class InventoryWindow : Window, IDisposable
     }
 
     private static readonly List<List<uint>> ZodiacWeaponId = [];
-   
-
+    
     private static readonly List<List<uint>> AnimaWeaponId = 
     [
         
@@ -287,7 +331,6 @@ public class InventoryWindow : Window, IDisposable
         ], //欧米茄
         GetListIntInRange(44721, 21), //伊甸
     ];
-
     
     // Job ID
     
@@ -299,7 +342,6 @@ public class InventoryWindow : Window, IDisposable
     // 8刻木 9锻铁 10铸甲 11雕金
     // 12制革 13裁缝 14炼金 15烹调
     // 16采矿 17园艺 18捕鱼
-    
     
     private static readonly List<uint> AnimaWeaponJobIdList = 
     [
@@ -423,10 +465,7 @@ public class InventoryWindow : Window, IDisposable
     private Dictionary<uint, List<int>> skysteelWeaponProcess = new();
     private Dictionary<uint, List<int>> splendorousWeaponProcess = new();
     private Dictionary<uint, List<int>> ultimateWeaponProcess = new();
-
-
-
-
+    
     private readonly string[] specialWeaponSeriesList =
     [
         "未选中","古武","魂武","优武","义武","曼武","幻武","天钢","莫雯","绝境战"
@@ -820,15 +859,9 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                string displayText = line[j] > 0 ? "●" : "◯";
-                ImGui.TextColored(color, displayText);
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], AnimaWeaponId[j][JobIndex[jobId]]);
+
             }
         }
         ImGui.EndTable();
@@ -863,15 +896,8 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                string displayText = line[j] > 0 ? "●" : "◯";
-                ImGui.TextColored(color, displayText);
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], EurekaWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -898,15 +924,8 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                string displayText = line[j] > 0 ? "●" : "◯";
-                ImGui.TextColored(color, displayText);
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], BozjaWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -931,15 +950,8 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                string displayText = line[j] > 0 ? "●" : "◯";
-                ImGui.TextColored(color, displayText);
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], MandervillousWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -962,15 +974,8 @@ public class InventoryWindow : Window, IDisposable
             
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                string displayText = line[j] > 0 ? "●" : "◯";
-                ImGui.TextColored(color, displayText);
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(PhantomWeaponId[j][NewJobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(PhantomWeaponId[j][NewJobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], PhantomWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -997,15 +1002,8 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                string displayText = line[j] > 0 ? "●" : "◯";
-                ImGui.TextColored(color, displayText);
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SkysteelWeaponId[j][LifeJobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SkysteelWeaponId[j][LifeJobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], SkysteelWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -1033,15 +1031,8 @@ public class InventoryWindow : Window, IDisposable
             
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                string displayText = line[j] > 0 ? "●" : "◯";
-                ImGui.TextColored(color, displayText);
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SplendorousWeaponId[j][LifeJobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SplendorousWeaponId[j][LifeJobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], SplendorousWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -1079,16 +1070,8 @@ public class InventoryWindow : Window, IDisposable
                     ImGui.Text("你别急，小吉还在做！");
                     continue;
                 }
-                
-                Vector4 color = line[j] > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
                 ImGui.TableNextColumn();
-                string displayText = line[j] > 0 ? "●" : "◯";
-                ImGui.TextColored(color, displayText);
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(UltimateWeaponId[j][jobIndex]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(UltimateWeaponId[j][jobIndex]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], UltimateWeaponId[j][jobIndex]);
             }
         }
         ImGui.EndTable();
