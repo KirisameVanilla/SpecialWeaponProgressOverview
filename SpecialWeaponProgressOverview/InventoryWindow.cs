@@ -1003,7 +1003,7 @@ public class InventoryWindow : Window, IDisposable
             for (var j = 0; j < line.Count; j++)
             {
                 ImGui.TableNextColumn();
-                DrawWeaponCell(line[j], SkysteelWeaponId[j][JobIndex[jobId]]);
+                DrawWeaponCell(line[j], SkysteelWeaponId[j][LifeJobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -1032,7 +1032,7 @@ public class InventoryWindow : Window, IDisposable
             for (var j = 0; j < line.Count; j++)
             {
                 ImGui.TableNextColumn();
-                DrawWeaponCell(line[j], SplendorousWeaponId[j][JobIndex[jobId]]);
+                DrawWeaponCell(line[j], SplendorousWeaponId[j][LifeJobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
