@@ -9,18 +9,19 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using Dalamud.Bindings.ImGui;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Game.Text;
 
 namespace SpecialWeaponProgressOverview;
 
 public class InventoryWindow : Window, IDisposable
 {
-    private Plugin plugin;
-    
     private static ICallGateSubscriber<uint, ulong, uint, uint>? ItemCount;
     private static ICallGateSubscriber<bool, bool>? Initialized;
     private static ICallGateSubscriber<bool>? IsInitialized;
-    private static ExcelSheet<Item> ItemSheet = DalamudApi.DataManager.GetExcelSheet<Item>();
-    private static ExcelSheet<ClassJob> ClassJobSheet = DalamudApi.DataManager.GetExcelSheet<ClassJob>();
+    private static readonly ExcelSheet<Item> ItemSheet = DalamudApi.DataManager.GetExcelSheet<Item>();
+    private static readonly ExcelSheet<ClassJob> ClassJobSheet = DalamudApi.DataManager.GetExcelSheet<ClassJob>();
 
     public static bool AToolsInstalled
     {
@@ -46,13 +47,14 @@ public class InventoryWindow : Window, IDisposable
             }
         }
     }
+    
     internal static void Init()
     {
         Initialized = DalamudApi.PluginInterface.GetIpcSubscriber<bool, bool>("AllaganTools.Initialized");
         IsInitialized = DalamudApi.PluginInterface.GetIpcSubscriber<bool>("AllaganTools.IsInitialized");
-        Initialized.Subscribe(SetupIPC);
+        Initialized.Subscribe(SetupIpc);
         DalamudApi.ClientState.Logout += LogoutCacheClear;
-        SetupIPC(true);
+        SetupIpc(true);
     }
 
     private static void LogoutCacheClear(int a, int b)
@@ -60,32 +62,24 @@ public class InventoryWindow : Window, IDisposable
         RetainerData.Clear();
     }
 
-    private static void SetupIPC(bool obj)
+    private static void SetupIpc(bool obj)
     {
         
         ItemCount = DalamudApi.PluginInterface.GetIpcSubscriber<uint, ulong, uint, uint>("AllaganTools.ItemCount");
     }
 
-    public static Dictionary<ulong, Dictionary<uint, ItemInfo>> RetainerData = new Dictionary<ulong, Dictionary<uint, ItemInfo>>();
-    public class ItemInfo
+    public static readonly Dictionary<ulong, Dictionary<uint, ItemInfo>> RetainerData = new Dictionary<ulong, Dictionary<uint, ItemInfo>>();
+    
+    public class ItemInfo(uint itemId, uint quantity, uint hqQuantity)
     {
-        public uint ItemId { get; set; }
-
-        public uint Quantity { get; set; }
-
-        public uint HQQuantity { get; set; }
-
-        public ItemInfo(uint itemId, uint quantity, uint hqQuantity)
-        {
-            ItemId = itemId;
-            Quantity = quantity;
-            HQQuantity = hqQuantity;
-        }
+        public uint ItemId { get; set; } = itemId;
+        public uint Quantity { get; set; } = quantity;
+        public uint HqQuantity { get; set; } = hqQuantity;
     }
-
+    
     public static uint GetRetainerInventoryItem(uint itemId, ulong retainerId, bool hqonly = false)
     {
-        if (ATools)
+        if (ATools && ItemCount != null)
         {
             return ItemCount.InvokeFunc(itemId, retainerId, 10000) +
                    ItemCount.InvokeFunc(itemId, retainerId, 10001) +
@@ -98,7 +92,7 @@ public class InventoryWindow : Window, IDisposable
         }
         return 0;
     }
-    public static unsafe int GetRetainerItemCount(uint ItemId, bool tryCache = true, bool hqOnly = false)
+    public static unsafe int GetRetainerItemCount(uint itemId, bool tryCache = true, bool hqOnly = false)
     {
 
         if (ATools)
@@ -109,9 +103,9 @@ public class InventoryWindow : Window, IDisposable
             {
                 if (tryCache)
                 {
-                    if (RetainerData.SelectMany(x => x.Value).Any(x => x.Key == ItemId))
+                    if (RetainerData.SelectMany(x => x.Value).Any(x => x.Key == itemId))
                     {
-                        return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemId == ItemId).Sum(x => x.Quantity);
+                        return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemId == itemId).Sum(x => x.Quantity);
                     }
                 }
 
@@ -123,40 +117,37 @@ public class InventoryWindow : Window, IDisposable
 
                     if (retainerId > 0 && retainer->Available)
                     {
-                        if (RetainerData.ContainsKey(retainerId))
+                        if (RetainerData.TryGetValue(retainerId, out var ret))
                         {
-                            var ret = RetainerData[retainerId];
-                            if (ret.ContainsKey(ItemId))
+                            if (ret.TryGetValue(itemId, out var item))
                             {
-                                var item = ret[ItemId];
-                                item.ItemId = ItemId;
-                                item.Quantity = GetRetainerInventoryItem(ItemId, retainerId);
+                                item.ItemId = itemId;
+                                item.Quantity = GetRetainerInventoryItem(itemId, retainerId);
 
                             }
                             else
                             {
-                                ret.TryAdd(ItemId, new ItemInfo(ItemId, GetRetainerInventoryItem(ItemId, retainerId), GetRetainerInventoryItem(ItemId, retainerId, true)));
+                                ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId), GetRetainerInventoryItem(itemId, retainerId, true)));
                             }
                         }
                         else
                         {
                             RetainerData.TryAdd(retainerId, new Dictionary<uint, ItemInfo>());
-                            var ret = RetainerData[retainerId];
-                            if (ret.ContainsKey(ItemId))
+                            var newret = RetainerData[retainerId];
+                            if (newret.TryGetValue(itemId, out var item))
                             {
-                                var item = ret[ItemId];
-                                item.ItemId = ItemId;
-                                item.Quantity = GetRetainerInventoryItem(ItemId, retainerId);
+                                item.ItemId = itemId;
+                                item.Quantity = GetRetainerInventoryItem(itemId, retainerId);
 
                             }
                             else
                             {
-                                ret.TryAdd(ItemId, new ItemInfo(ItemId, GetRetainerInventoryItem(ItemId, retainerId), GetRetainerInventoryItem(ItemId, retainerId, true)));
+                                newret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId), GetRetainerInventoryItem(itemId, retainerId, true)));
                             }
                         }
                     }
                 }
-                return (int)RetainerData.SelectMany(x => x.Value).Where(x => x.Key == ItemId).Sum(x => x.Value.Quantity);
+                return (int)RetainerData.SelectMany(x => x.Value).Where(x => x.Key == itemId).Sum(x => x.Value.Quantity);
             }
             catch (Exception)
             {
@@ -177,7 +168,7 @@ public class InventoryWindow : Window, IDisposable
         return countTotal;
     }
 
-    public InventoryWindow(Plugin plugin)
+    public InventoryWindow()
         : base("InventoryWindow", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         SizeConstraints = new WindowSizeConstraints
@@ -185,19 +176,58 @@ public class InventoryWindow : Window, IDisposable
             MinimumSize = new Vector2(375, 330),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
-
-        this.plugin = plugin;
     }
 
     public void Dispose()
     {
-        Initialized?.Unsubscribe(SetupIPC);
+        Initialized?.Unsubscribe(SetupIpc);
         DalamudApi.ClientState.Logout -= LogoutCacheClear;
         Initialized = null;
         IsInitialized = null;
         ItemCount = null;
     }
-
+    
+    private void PrintItemPayload(uint itemId)
+    {
+        var itemRow = ItemSheet.GetRow(itemId);
+        var payloadList = new List<Payload>
+        {
+            new UIForegroundPayload((ushort)(0x223 + itemRow.Rarity * 2)),
+            new UIGlowPayload((ushort)(0x224 + itemRow.Rarity * 2)),
+            new ItemPayload(itemId, false),
+            new UIForegroundPayload(500),
+            new UIGlowPayload(501),
+            new TextPayload($"{(char)SeIconChar.LinkMarker}"),
+            new UIForegroundPayload(0),
+            new UIGlowPayload(0),
+            new TextPayload(itemRow.Name.ExtractText()),
+            new RawPayload([0x02, 0x27, 0x07, 0xCF, 0x01, 0x01, 0x01, 0xFF, 0x01, 0x03]),
+            new RawPayload([0x02, 0x13, 0x02, 0xEC, 0x03])
+        };
+        var messagePayloads = new List<Payload>(payloadList);
+        messagePayloads.AddRange([new TextPayload(" 已复制到剪切板")]);
+        var fullMessage = new SeString(messagePayloads);
+        DalamudApi.ChatGui.Print(new XivChatEntry { Message = fullMessage });
+    }
+    
+    private void DrawWeaponCell(int count, uint itemId)
+    {
+        Vector4 color = count > 0 ? new(0, 1, 0, 1) : new(0.5f, 0.5f, 0.5f, 1);
+        string displayText = count > 0 ? "●" : "◯";
+        ImGui.TextColored(color, displayText);
+        
+        if (ImGui.IsItemClicked())
+        {
+            CopyItemNameToClipboard(itemId);
+            PrintItemPayload(itemId);
+        }
+    }
+    
+    private void CopyItemNameToClipboard(uint itemId)
+    {
+        var itemName = ItemSheet.GetRow(itemId).Name.ExtractText();
+        ImGui.SetClipboardText(itemName);
+    }
     static List<uint> GetListIntInRange(int from, int count)
     {
         var numbers = new List<uint>();
@@ -209,11 +239,10 @@ public class InventoryWindow : Window, IDisposable
         return numbers;
     }
 
-   private static readonly List<List<uint>> ZodiacWeaponId = new List<List<uint>>();
-   
-
-    private static readonly List<List<uint>> AnimaWeaponId = new List<List<uint>>
-    {
+    private static readonly List<List<uint>> ZodiacWeaponId = [];
+    
+    private static readonly List<List<uint>> AnimaWeaponId = 
+    [
         
         GetListIntInRange(13611, 13),//魂武一阶段，元灵武器·元灵
         GetListIntInRange(13597, 13),//魂武二阶段，元灵武器·觉醒
@@ -223,10 +252,10 @@ public class InventoryWindow : Window, IDisposable
         GetListIntInRange(15237, 13),//魂武六阶段，元灵武器·灵慧
         GetListIntInRange(15251, 13),//魂武七阶段，真元灵武器
         GetListIntInRange(16050, 13),//魂武八阶段，真元灵武器·灵光
-    };
+    ];
 
-    private static readonly List<List<uint>> EurekaWeaponId = new List<List<uint>>
-    {
+    private static readonly List<List<uint>> EurekaWeaponId = 
+    [
         GetListIntInRange(21942, 15),//禁地兵装
         GetListIntInRange(21958, 15),//禁地兵装+1
         GetListIntInRange(21974, 15),//禁地兵装+2
@@ -242,44 +271,44 @@ public class InventoryWindow : Window, IDisposable
         GetListIntInRange(24675, 15),//新兵装
         GetListIntInRange(24691, 15),//优雷卡
         GetListIntInRange(24707, 15),//优雷卡·改
-    };
+    ];
 
-    private static readonly List<List<uint>> BozjaWeaponId = new List<List<uint>>
-    {
+    private static readonly List<List<uint>> BozjaWeaponId = 
+    [
         GetListIntInRange(30228, 17),//义军武器
         GetListIntInRange(30767, 17),//改良型义军武器
         GetListIntInRange(30785, 17),//回忆
         GetListIntInRange(32651, 17),//裁决
         GetListIntInRange(32669, 17),//改良型裁决
         GetListIntInRange(33462, 17),//女王武器
-    };
+    ];
 
-    private static readonly List<List<uint>> MandervillousWeaponId = new List<List<uint>>
-    {
+    private static readonly List<List<uint>> MandervillousWeaponId = 
+    [
         GetListIntInRange(38400, 19), //曼德维尔武器
         GetListIntInRange(39144, 19), //曼德维尔武器·惊异
         GetListIntInRange(39920, 19), //曼德维尔武器·威严
         GetListIntInRange(40932, 19), //曼德维尔武器·盈满
-    };
+    ];
 
-    private static readonly List<List<uint>> PhantomWeaponId = new List<List<uint>>
-    {
+    private static readonly List<List<uint>> PhantomWeaponId = 
+    [
         GetListIntInRange(47869, 21), //幻境武器·半影
         GetListIntInRange(47006, 21), //幻境武器·本影
-    };
+    ];
 
-    private static readonly List<List<uint>> SkysteelWeaponId = new List<List<uint>>
-    {
+    private static readonly List<List<uint>> SkysteelWeaponId = 
+    [
         GetListIntInRange(29612, 11), //天钢工具
         GetListIntInRange(29623, 11), //天钢工具+1
         GetListIntInRange(29634, 13), //龙诗工具
         GetListIntInRange(30282, 13), //改良型龙诗工具
         GetListIntInRange(30293, 13), //天诗工具
         GetListIntInRange(31714, 13), //天工工具
-    };
+    ];
 
-    private static readonly List<List<uint>> SplendorousWeaponId = new List<List<uint>>
-    {
+    private static readonly List<List<uint>> SplendorousWeaponId = 
+    [
         GetListIntInRange(38715, 11), //卓越
         GetListIntInRange(38726, 11), //改良型卓越
         GetListIntInRange(38737, 11), //水晶
@@ -287,8 +316,21 @@ public class InventoryWindow : Window, IDisposable
         GetListIntInRange(39743, 11), //乔菈卓绝
         GetListIntInRange(41180, 11), //诺弗兰特远见
         GetListIntInRange(41191, 11), //领航星
-    };
+    ];
 
+    private static readonly List<List<uint>> UltimateWeaponId = 
+    [
+        GetListIntInRange(20959, 15), //巴哈
+        GetListIntInRange(22868, 15), //神兵
+        GetListIntInRange(28289, 17), //亚历山大
+        GetListIntInRange(36943, 19), //龙诗
+        [
+            39164, 39165, 39166, 39167, 39168, 39169, 39170, 
+            39171, 39172, 39173, 39174, 39175, 39176, 39177, 
+            39178, 39179, 39180, 39181, 39182, 43642, 43663
+        ], //欧米茄
+        GetListIntInRange(44721, 21), //伊甸
+    ];
     
     // Job ID
     
@@ -301,85 +343,91 @@ public class InventoryWindow : Window, IDisposable
     // 12制革 13裁缝 14炼金 15烹调
     // 16采矿 17园艺 18捕鱼
     
-    
-    private static readonly List<uint> AnimaWeaponJobIdList = new()
-    {
+    private static readonly List<uint> AnimaWeaponJobIdList = 
+    [
         19, 21, 32,
         24, 28, 33,
         20, 22, 30,
         23, 31,
         25, 27
-    };
+    ];
 
-    private static readonly List<uint> ZodiacWeaponJobIdList = new()
-    {
+    private static readonly List<uint> ZodiacWeaponJobIdList = 
+    [
         19, 21,
         24, 28,
         20, 22, 30,
         23,
         25, 27
-    };
+    ];
 
-    private static readonly List<uint> EurekaWeaponJobIdList = new()
-    {
+    private static readonly List<uint> EurekaWeaponJobIdList = 
+    [
         19, 21, 32,
         24, 28, 33,
         20, 22, 34, 30,
         23, 31,
         25, 27, 35
-    };
+    ];
 
-    private static readonly List<uint> BozjaWeaponJobIdList = new()
-    {
+    private static readonly List<uint> BozjaWeaponJobIdList = 
+    [
         19, 21, 32, 37,
         24, 28, 33,
         20, 22, 34, 30,
         23, 31, 38,
         25, 27, 35
-    };
+    ];
 
-    private static readonly List<uint> MandervillousWeaponJobIdList = new()
-    {
+    private static readonly List<uint> MandervillousWeaponJobIdList = 
+    [
         19, 21, 32, 37,
         24, 28, 33, 40,
         20, 22, 39, 34, 30,
         23, 31, 38,
         25, 27, 35,
-    };
+    ];
 
-    private static readonly List<uint> PhantomWeaponJobIdList = new()
-    {
+    private static readonly List<uint> PhantomWeaponJobIdList = 
+    [
         19, 21, 32, 37,
         24, 28, 33, 40,
         20, 22, 39, 34, 30, 41,
         23, 31, 38,
         25, 27, 35, 42,
-    };
+    ];
     
-    private static readonly List<uint> SkysteelWeaponJobIdList = new()
-    {
+    private static readonly List<uint> SkysteelWeaponJobIdList = 
+    [
         8, 9, 10, 11,
         12, 13, 14, 15,
         16, 17, 18,
-    };
+    ];
     
-    private static readonly List<uint> SplendorousWeaponJobIdList = new()
-    {
+    private static readonly List<uint> SplendorousWeaponJobIdList = 
+    [
         8, 9, 10, 11,
         12, 13, 14, 15,
         16, 17, 18,
-    };
+    ];
+    
+    private static readonly List<uint> UltimateWeaponJobIdList =  // 部分职业暂无老绝本武器，故重新排序
+    [
+        19, 21, 32, 24, 28, 33, 20, 
+        22, 30, 34, 23, 31, 25, 27, 
+        35, 37, 38, 40, 39, 41, 42,
+    ];
 
     private static readonly Dictionary<uint, int> JobIndex = new()
     {
         { 19, 0 }, { 21, 2 }, { 32, 6 }, { 37, 15 },
         { 24, 8 }, { 28, 11 }, { 33, 12 }, { 40, 17 },
-        { 20, 1 }, { 22, 3 }, { 34, 13 }, { 39, 18 }, { 30, 5 },
+        { 20, 1 }, { 22, 3 }, { 34, 13 }, { 39, 18 }, { 30, 5 },{ 41, 19 },
         { 23, 4 }, { 31, 7 }, { 38, 16 },
-        { 25, 9 }, { 27, 10 }, { 35, 14 },
+        { 25, 9 }, { 27, 10 }, { 35, 14 }, { 42, 20 }
     };
 
-    private static readonly Dictionary<uint, int> PhantomJobIndex = new()
+    private static readonly Dictionary<uint, int> NewJobIndex = new()
     {
         { 19, 0 }, { 21, 2 }, { 32, 10 }, { 37, 15 },
         { 24, 5 }, { 28, 8 }, { 33, 12 }, { 40, 18 },
@@ -405,6 +453,7 @@ public class InventoryWindow : Window, IDisposable
         {6,21},//幻武
         {7,11},//天钢
         {8,11},//莫雯
+        {9,21},//绝境战
     };
 
     private Dictionary<uint, List<int>> zodiacWeaponProcess = new();
@@ -415,14 +464,12 @@ public class InventoryWindow : Window, IDisposable
     private Dictionary<uint, List<int>> phantomWeaponProcess = new();
     private Dictionary<uint, List<int>> skysteelWeaponProcess = new();
     private Dictionary<uint, List<int>> splendorousWeaponProcess = new();
-
-
-
-
+    private Dictionary<uint, List<int>> ultimateWeaponProcess = new();
+    
     private readonly string[] specialWeaponSeriesList =
-    {
-        "未选中","古武","魂武","优武","义武","曼武","幻武","天钢","莫雯"
-    };
+    [
+        "未选中","古武","魂武","优武","义武","曼武","幻武","天钢","莫雯","绝境战"
+    ];
 
     private int selectedWeaponSeriesIndex;
 
@@ -432,42 +479,48 @@ public class InventoryWindow : Window, IDisposable
         //古武
         for (var i = 0; i < JobsOfSpecialWeapon[1]; i++)
         {
-            zodiacWeaponProcess.Add(ZodiacWeaponJobIdList[i], new List<int>(new int[ZodiacWeaponId.Count]));
+            zodiacWeaponProcess.Add(ZodiacWeaponJobIdList[i], [.. Enumerable.Repeat(0, ZodiacWeaponId.Count)]);
+
         }
         //魂武
         for (var i = 0; i < JobsOfSpecialWeapon[2]; i++)
         {
-            animaWeaponProcess.Add(AnimaWeaponJobIdList[i], new List<int>(new int[AnimaWeaponId.Count]));
+            animaWeaponProcess.Add(AnimaWeaponJobIdList[i], [.. Enumerable.Repeat(0, AnimaWeaponId.Count)]);
         }
         //优武
         for (var i = 0; i < JobsOfSpecialWeapon[3]; i++)
         {
-            eurekaWeaponProcess.Add(EurekaWeaponJobIdList[i], new List<int>(new int[EurekaWeaponId.Count]));
+            eurekaWeaponProcess.Add(EurekaWeaponJobIdList[i], [.. Enumerable.Repeat(0, EurekaWeaponId.Count)]);
         }
         //义武
         for (var i = 0; i < JobsOfSpecialWeapon[4]; i++)
         {
-            bozjaWeaponProcess.Add(BozjaWeaponJobIdList[i], new List<int>(new int[BozjaWeaponId.Count]));
+            bozjaWeaponProcess.Add(BozjaWeaponJobIdList[i], [.. Enumerable.Repeat(0, BozjaWeaponId.Count)]);
         }
         //曼武
         for (var i = 0; i < JobsOfSpecialWeapon[5]; i++)
         {
-            mandervillousWeaponProcess.Add(MandervillousWeaponJobIdList[i], new List<int>(new int[MandervillousWeaponId.Count]));
+            mandervillousWeaponProcess.Add(MandervillousWeaponJobIdList[i], [.. Enumerable.Repeat(0, MandervillousWeaponId.Count)]);
         }
         //幻武
         for (var i = 0; i < JobsOfSpecialWeapon[6]; i++)
         {
-            phantomWeaponProcess.Add(PhantomWeaponJobIdList[i], new List<int>(new int[PhantomWeaponId.Count]));
+            phantomWeaponProcess.Add(PhantomWeaponJobIdList[i], [.. Enumerable.Repeat(0, PhantomWeaponId.Count)]);
         }
         //天钢
         for (var i = 0; i < JobsOfSpecialWeapon[7]; i++)
         {
-            skysteelWeaponProcess.Add(SkysteelWeaponJobIdList[i], new List<int>(new int[SkysteelWeaponId.Count]));
+            skysteelWeaponProcess.Add(SkysteelWeaponJobIdList[i], [.. Enumerable.Repeat(0, SkysteelWeaponId.Count)]);
         }
         //莫雯
         for (var i = 0; i < JobsOfSpecialWeapon[8]; i++)
         {
-            splendorousWeaponProcess.Add(SplendorousWeaponJobIdList[i], new List<int>(new int[SplendorousWeaponId.Count]));
+            splendorousWeaponProcess.Add(SplendorousWeaponJobIdList[i], [.. Enumerable.Repeat(0, SplendorousWeaponId.Count)]);
+        }
+        //绝境战
+        for (var i = 0; i < JobsOfSpecialWeapon[9]; i++)
+        {
+            ultimateWeaponProcess.Add(UltimateWeaponJobIdList[i], [.. Enumerable.Repeat(0, UltimateWeaponId.Count)]);
         }
     }
 
@@ -481,6 +534,7 @@ public class InventoryWindow : Window, IDisposable
         }
         // var playerJobId = localPlayer.ClassJob.RowId;
         ImGui.Text($"Is Allagan Tools available: {ATools}");
+        ImGui.Text($"登录后首次查询前请先交互传唤铃，以获取雇员背包数据");
         ImGui.Text($"点一下数字能获取对应武器名字（然后打开item search可以查预览）");
         if(ImGui.IsItemHovered())
         {
@@ -539,6 +593,12 @@ public class InventoryWindow : Window, IDisposable
                         DrawSplendorous();
                         break;
                     }
+                case 9:
+                    {
+                        GetProcessData(9, UltimateWeaponId, UltimateWeaponJobIdList, ref ultimateWeaponProcess);
+                        DrawUltimate();
+                        break;
+                    }
             }
         }
     }
@@ -558,18 +618,37 @@ public class InventoryWindow : Window, IDisposable
             for (var j = 0; j < weaponIdList.Count; j++)//阶段
             {
                 var curJobId = jobIdList[i];
-                // 针对Phantom武器使用专用索引
-                var jobIndex = weaponIndex == 6 ? PhantomJobIndex[curJobId] : 
-                                   (weaponIndex is 7 or 8) ? LifeJobIndex[curJobId] :
-                                   JobIndex[curJobId];
-                var curWeaponId = weaponIdList[j][jobIndex];
-                var curWeaponCount = GetItemCountTotal(curWeaponId);
-                weaponProcess[curJobId][j] = curWeaponCount;
+                // 针对Ultimate武器(绝境战)的特殊处理
+                int jobIndex;
+                if (weaponIndex == 9) // 绝境战
+                {
+                    // 前5项使用JobIndex，第6项使用NewJobIndex
+                    jobIndex = j < 5 ? JobIndex[curJobId] : NewJobIndex[curJobId];
+                }
+                else
+                {
+                    // 针对Phantom武器使用专用索引
+                    jobIndex = weaponIndex == 6 ? NewJobIndex[curJobId] : 
+                                  (weaponIndex is 7 or 8) ? LifeJobIndex[curJobId] :
+                                  JobIndex[curJobId];
+                }
+                
+                // 添加边界检查
+                if (jobIndex < weaponIdList[j].Count)
+                {
+                    var curWeaponId = weaponIdList[j][jobIndex];
+                    var curWeaponCount = GetItemCountTotal(curWeaponId);
+                    weaponProcess[curJobId][j] = curWeaponCount;
+                }
+                else
+                {
+                    // 如果索引越界，则设置为0
+                    weaponProcess[curJobId][j] = 0;
+                }
             }
         }
     }
-
-
+    
     // private string ComputeNeedsZodiac()
     // {
     //     Dictionary<uint, List<int>> zodiacWeaponNeed = new();
@@ -633,7 +712,7 @@ public class InventoryWindow : Window, IDisposable
         Dictionary<uint, List<int>> bozjaWeaponNeed = new();
         for (var i = 0; i < JobsOfSpecialWeapon[4]; i++)
         {
-            bozjaWeaponNeed.Add(BozjaWeaponJobIdList[i], new List<int>(new int[BozjaWeaponId.Count]));
+            bozjaWeaponNeed.Add(BozjaWeaponJobIdList[i], [..Enumerable.Repeat(0, BozjaWeaponId.Count)]);
         }
 
         for (var i = 0; i < JobsOfSpecialWeapon[4]; i++)//Job Index
@@ -651,7 +730,7 @@ public class InventoryWindow : Window, IDisposable
         }
 
         List<int> have = new List<int>();
-        List<int> needs = new List<int> { 0, 0, 0, 0, 0, 0 };
+        List<int> needs = [0, 0, 0, 0, 0, 0];
         foreach (var jobId in BozjaWeaponJobIdList)
         {
             for (var i = 0; i < BozjaWeaponId.Count; i++)
@@ -665,8 +744,8 @@ public class InventoryWindow : Window, IDisposable
         needs[3] *= 15;
         needs[4] *= 15;
         needs[5] *= 15;
-        List<int> newNeeds = new List<int> {needs[0], needs[1], needs[1], needs[1], needs[2], needs[3], needs[4], needs[5]};
-        List<uint> needItemId = new List<uint> {30273, 31573, 31574, 31575, 31576, 32956, 32959, 33767};
+        List<int> newNeeds = [needs[0], needs[1], needs[1], needs[1], needs[2], needs[3], needs[4], needs[5]];
+        List<uint> needItemId = [30273, 31573, 31574, 31575, 31576, 32956, 32959, 33767];
         needs = newNeeds;
         foreach (var id in needItemId)
         {
@@ -693,7 +772,7 @@ public class InventoryWindow : Window, IDisposable
         Dictionary<uint, List<int>> mandervillousWeaponNeed = new();
         for (var i = 0; i < JobsOfSpecialWeapon[5]; i++)
         {
-            mandervillousWeaponNeed.Add(MandervillousWeaponJobIdList[i], new List<int>(new int[MandervillousWeaponId.Count]));
+            mandervillousWeaponNeed.Add(MandervillousWeaponJobIdList[i], [..Enumerable.Repeat(0, MandervillousWeaponId.Count)]);
         }
 
         for (var i = 0; i < JobsOfSpecialWeapon[5]; i++)//Job Index
@@ -710,8 +789,8 @@ public class InventoryWindow : Window, IDisposable
             }
         }
 
-        List<int> have = new List<int>{GetItemCountTotal(38420), GetItemCountTotal(38940), GetItemCountTotal(40322), GetItemCountTotal(41032)};
-        List<int> needs = new List<int> { 0, 0, 0, 0 };
+        List<int> have = [GetItemCountTotal(38420), GetItemCountTotal(38940), GetItemCountTotal(40322), GetItemCountTotal(41032)];
+        List<int> needs = [0, 0, 0, 0];
         foreach (var jobId in MandervillousWeaponJobIdList)
         {
             for (var i = 0; i < MandervillousWeaponId.Count; i++)
@@ -727,8 +806,8 @@ public class InventoryWindow : Window, IDisposable
     
     private string ComputeNeedsPhantom()
     {
-        List<int> have = new List<int> { GetItemCountTotal(47750), GetItemCountTotal(46850) };
-        List<int> needs = new List<int> { 0, 0 };
+        List<int> have = [GetItemCountTotal(47750), GetItemCountTotal(46850)];
+        List<int> needs = [0, 0];
         foreach (var jobId in PhantomWeaponJobIdList)
         {
             var process = phantomWeaponProcess[jobId];
@@ -760,16 +839,16 @@ public class InventoryWindow : Window, IDisposable
 
     private void DrawAnima()
     {
-        ImGui.BeginTable("AnimaWeaponChart", AnimaWeaponId.Count + 1, ImGuiTableFlags.Resizable);
-        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("元灵武器·元灵", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("元灵武器·觉醒", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("新元灵武器", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("元灵武器·超导", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("百炼成钢的元灵武器", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("元灵武器·灵慧", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("真元灵武器", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("真元灵武器·灵光", ImGuiTableColumnFlags.None);
+        ImGui.BeginTable("AnimaWeaponChart", AnimaWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业");
+        ImGui.TableSetupColumn("元灵武器·元灵");
+        ImGui.TableSetupColumn("元灵武器·觉醒");
+        ImGui.TableSetupColumn("新元灵武器");
+        ImGui.TableSetupColumn("元灵武器·超导");
+        ImGui.TableSetupColumn("百炼成钢的元灵武器");
+        ImGui.TableSetupColumn("元灵武器·灵慧");
+        ImGui.TableSetupColumn("真元灵武器");
+        ImGui.TableSetupColumn("真元灵武器·灵光");
         ImGui.TableHeadersRow();
         foreach (var jobId in AnimaWeaponJobIdList)
         {
@@ -780,39 +859,33 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(AnimaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], AnimaWeaponId[j][JobIndex[jobId]]);
+
             }
         }
         ImGui.EndTable();
     }
-
-
+    
     private void DrawEureka()
     {
-        ImGui.BeginTable("EurekaWeaponChart", EurekaWeaponId.Count + 1, ImGuiTableFlags.Resizable);
-        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("禁地兵装", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("禁地兵装+1", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("禁地兵装+2", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("常风", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("恒冰", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("恒冰+1", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("元素", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("元素+1", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("元素+2", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("涌火", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("丰水", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("丰水+1", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("新兵装", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("优雷卡", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("优雷卡·改", ImGuiTableColumnFlags.None);
+        ImGui.BeginTable("EurekaWeaponChart", EurekaWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业");
+        ImGui.TableSetupColumn("禁地兵装");
+        ImGui.TableSetupColumn("禁地兵装+1");
+        ImGui.TableSetupColumn("禁地兵装+2");
+        ImGui.TableSetupColumn("常风");
+        ImGui.TableSetupColumn("恒冰");
+        ImGui.TableSetupColumn("恒冰+1");
+        ImGui.TableSetupColumn("元素");
+        ImGui.TableSetupColumn("元素+1");
+        ImGui.TableSetupColumn("元素+2");
+        ImGui.TableSetupColumn("涌火");
+        ImGui.TableSetupColumn("丰水");
+        ImGui.TableSetupColumn("丰水+1");
+        ImGui.TableSetupColumn("新兵装");
+        ImGui.TableSetupColumn("优雷卡");
+        ImGui.TableSetupColumn("优雷卡·改");
         ImGui.TableHeadersRow();
         foreach (var jobId in EurekaWeaponJobIdList)
         {
@@ -823,14 +896,8 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(EurekaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], EurekaWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -839,14 +906,14 @@ public class InventoryWindow : Window, IDisposable
     private void DrawBozja()
     {
         ImGui.Text($"{ComputeNeedsBozja()}");
-        ImGui.BeginTable("BozjaWeaponChart", BozjaWeaponId.Count + 1, ImGuiTableFlags.Resizable);
-        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("义军武器", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("改良型义军武器", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("回忆", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("裁决", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("改良型裁决", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("女王武器", ImGuiTableColumnFlags.None);
+        ImGui.BeginTable("BozjaWeaponChart", BozjaWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业");
+        ImGui.TableSetupColumn("义军武器");
+        ImGui.TableSetupColumn("改良型义军武器");
+        ImGui.TableSetupColumn("回忆");
+        ImGui.TableSetupColumn("裁决");
+        ImGui.TableSetupColumn("改良型裁决");
+        ImGui.TableSetupColumn("女王武器");
         ImGui.TableHeadersRow();
         foreach (var jobId in BozjaWeaponJobIdList)
         {
@@ -857,14 +924,8 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(BozjaWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], BozjaWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -873,12 +934,12 @@ public class InventoryWindow : Window, IDisposable
     private void DrawMandervillous()
     {
         ImGui.Text($"{ComputeNeedsMandervillous()}");
-        ImGui.BeginTable("MandervillousWeaponChart", MandervillousWeaponId.Count + 1, ImGuiTableFlags.Resizable);
-        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("曼德维尔武器", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("曼德维尔武器·惊异", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("曼德维尔武器·威严", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("曼德维尔武器·盈满", ImGuiTableColumnFlags.None);
+        ImGui.BeginTable("MandervillousWeaponChart", MandervillousWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业");
+        ImGui.TableSetupColumn("曼德维尔武器");
+        ImGui.TableSetupColumn("曼德维尔武器·惊异");
+        ImGui.TableSetupColumn("曼德维尔武器·威严");
+        ImGui.TableSetupColumn("曼德维尔武器·盈满");
         ImGui.TableHeadersRow();
         foreach (var jobId in MandervillousWeaponJobIdList)
         {
@@ -889,14 +950,8 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(MandervillousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], MandervillousWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -905,10 +960,10 @@ public class InventoryWindow : Window, IDisposable
     private void DrawPhantom()
     { 
         ImGui.Text($"{ComputeNeedsPhantom()}");
-        ImGui.BeginTable("PhantomWeaponChart", PhantomWeaponId.Count + 1, ImGuiTableFlags.Resizable);
-        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn(label:"幻境武器·半影", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn(label:"幻境武器·本影", ImGuiTableColumnFlags.None);
+        ImGui.BeginTable("PhantomWeaponChart", PhantomWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业");
+        ImGui.TableSetupColumn(label:"幻境武器·半影");
+        ImGui.TableSetupColumn(label:"幻境武器·本影");
         ImGui.TableHeadersRow();
         foreach (var jobId in PhantomWeaponJobIdList)
         { 
@@ -919,14 +974,8 @@ public class InventoryWindow : Window, IDisposable
             
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(PhantomWeaponId[j][PhantomJobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(PhantomWeaponId[j][PhantomJobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], PhantomWeaponId[j][JobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -935,14 +984,14 @@ public class InventoryWindow : Window, IDisposable
     private void DrawSkysteel()
     {
         ImGui.Text("");
-        ImGui.BeginTable("SkysteelWeaponChart", SkysteelWeaponId.Count + 1, ImGuiTableFlags.Resizable);
-        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("天钢工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("天钢工具+1", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("龙诗工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("改良型龙诗工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("天诗工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("天工工具", ImGuiTableColumnFlags.None);
+        ImGui.BeginTable("SkysteelWeaponChart", SkysteelWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业");
+        ImGui.TableSetupColumn("天钢工具");
+        ImGui.TableSetupColumn("天钢工具+1");
+        ImGui.TableSetupColumn("龙诗工具");
+        ImGui.TableSetupColumn("改良型龙诗工具");
+        ImGui.TableSetupColumn("天诗工具");
+        ImGui.TableSetupColumn("天工工具");
         ImGui.TableHeadersRow();
         foreach (var jobId in SkysteelWeaponJobIdList)
         { 
@@ -953,14 +1002,8 @@ public class InventoryWindow : Window, IDisposable
 
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SkysteelWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SkysteelWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], SkysteelWeaponId[j][LifeJobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
@@ -969,15 +1012,15 @@ public class InventoryWindow : Window, IDisposable
     private void DrawSplendorous()
     { 
         ImGui.Text("");
-        ImGui.BeginTable("SplendorousWeaponChart", SplendorousWeaponId.Count + 1, ImGuiTableFlags.Resizable);
-        ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("卓越工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("改良型卓越工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("水晶工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("乔菈水晶工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("乔菈卓绝工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("诺弗兰特远见工具", ImGuiTableColumnFlags.None);
-        ImGui.TableSetupColumn("领航星工具", ImGuiTableColumnFlags.None);
+        ImGui.BeginTable("SplendorousWeaponChart", SplendorousWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业");
+        ImGui.TableSetupColumn("卓越工具");
+        ImGui.TableSetupColumn("改良型卓越工具");
+        ImGui.TableSetupColumn("水晶工具");
+        ImGui.TableSetupColumn("乔菈水晶工具");
+        ImGui.TableSetupColumn("乔菈卓绝工具");
+        ImGui.TableSetupColumn("诺弗兰特远见工具");
+        ImGui.TableSetupColumn("领航星工具");
         ImGui.TableHeadersRow();
         foreach (var jobId in SplendorousWeaponJobIdList)
         { 
@@ -988,16 +1031,50 @@ public class InventoryWindow : Window, IDisposable
             
             for (var j = 0; j < line.Count; j++)
             {
-                Vector4 color = line[j] > 0 ? new(0, 255, 0, 255) : new(255, 0, 0, 255);
                 ImGui.TableNextColumn();
-                ImGui.TextColored(color, $"{line[j]}");
-                if (ImGui.IsItemClicked())
-                {
-                    ImGui.SetClipboardText($"{ItemSheet.GetRow(SplendorousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()}");
-                    DalamudApi.ChatGui.Print($"{ItemSheet.GetRow(SplendorousWeaponId[j][JobIndex[jobId]]).Name.ExtractText()} 已复制到剪贴板");
-                }
+                DrawWeaponCell(line[j], SplendorousWeaponId[j][LifeJobIndex[jobId]]);
             }
         }
         ImGui.EndTable();
     }
+    
+    private void DrawUltimate()
+    { 
+        ImGui.Text("");
+        ImGui.BeginTable("UltimateWeaponChart", UltimateWeaponId.Count + 1, ImGuiTableFlags.Resizable | ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("职业");
+        ImGui.TableSetupColumn("绝巴哈");
+        ImGui.TableSetupColumn("绝神兵");
+        ImGui.TableSetupColumn("绝亚");
+        ImGui.TableSetupColumn("绝龙诗");
+        ImGui.TableSetupColumn("绝欧米茄");
+        ImGui.TableSetupColumn("绝伊甸");
+        ImGui.TableHeadersRow();
+        foreach (var jobId in UltimateWeaponJobIdList)
+        {
+            var line = ultimateWeaponProcess[jobId];
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            ImGui.Text(ClassJobSheet.GetRow(jobId).Name.ExtractText());
+            
+            for (var j = 0; j < line.Count; j++)
+            {
+                // 使用与GetProcessData相同的索引逻辑确定jobIndex
+                int jobIndex = j < 5 ? JobIndex[jobId] : NewJobIndex[jobId];
+                
+                // 检查索引是否在有效范围内
+                if (jobIndex >= UltimateWeaponId[j].Count)
+                {
+                    // 超出数组范围的格子显示为空格
+                    ImGui.TableNextColumn();
+                    ImGui.Text("你别急，小吉还在做！");
+                    continue;
+                }
+                ImGui.TableNextColumn();
+                DrawWeaponCell(line[j], UltimateWeaponId[j][jobIndex]);
+            }
+        }
+        ImGui.EndTable();
+    }
+
 }
